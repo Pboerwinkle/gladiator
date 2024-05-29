@@ -42,6 +42,13 @@ class Gladiator:
 				addend = -1
 			x = self.pos[1] + self.controls[inp][1]
 		y = self.pos[0] + self.controls[inp][0] + addend
+		for i, snake in enumerate(snakes):
+			if snake != 0 and snake.pos == [y, x]:
+				entityList[snake.pos[0]][snake.pos[1]] = 0
+				snakes[i] = 0
+				y = player.pos[0]
+				x = player.pos[1]
+				break
 		if mapList[y][x] == 0:
 			self.pos = [y, x]
 		entityList[self.pos[0]][self.pos[1]] = "gladiator"
@@ -87,10 +94,14 @@ class Snake:
 						break
 				entityList[self.pos[0]][self.pos[1]] = 0
 				self.pos = path[-2]
+				if path[-2] == player.pos:
+					killPlayer()
+					self.pos = path[-1]
 				entityList[self.pos[0]][self.pos[1]] = "snake"
 				break
 
-snakey = Snake([1, 3])
+snakes = [0 for i in range(10)]
+snakes[0] = Snake([1, 3])
 
 def drawHex(img, x, y, s=120):
 	screen.blit(imgs[img][0], (x*(2/3)*s, y*(2/3*s) + (x%2==0)*(2/6)*s - imgs[img][1]))
@@ -105,6 +116,11 @@ def getNeighbors(pos):
 		neighbors.append([pos[0]+diff[0], pos[1]+diff[1]])
 	return neighbors
 
+def killPlayer():
+	global player
+	entityList[player.pos[0]][player.pos[1]] = 0
+	player = 0
+
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -112,9 +128,11 @@ while True:
 		if event.type == pygame.QUIT:
 			pygame.quit()
 			quit()
-		if event.type == pygame.KEYDOWN and event.unicode in player.controls.keys():
+		if event.type == pygame.KEYDOWN and player != 0 and event.unicode in player.controls.keys():
 			player.move(event.unicode)
-			snakey.move()
+			for snake in snakes:
+				if snake != 0:
+					snake.move()
 
 	screen.fill((22, 19, 16))
 
