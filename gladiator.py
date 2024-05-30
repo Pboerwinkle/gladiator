@@ -12,32 +12,42 @@ pygame.display.set_caption("snake", "snake")
 clock = pygame.time.Clock()
 framerate = 60
 
-tileCodes = {0: "floor", 1: "wall", 2: "hole"}
+tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate"}
 imgs = {"floor": [pygame.image.load("floor.png"), 8],
 		"wall": [pygame.image.load("wall.png"), 80],
 		"hole": [pygame.image.load("hole.png"), 0],
+		"grate": [pygame.image.load("grate.png"), 0],
 		"gladiator": [pygame.image.load("gladiator.png"), 80],
-		"snake": [pygame.image.load("snake.png"), 80]}
+		"snake1": [pygame.image.load("snake1.png"), 80],
+		"snake2": [pygame.image.load("snake2.png"), 80]}
+walkableTiles = [0, 3]
 
-mapList = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		   [1, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 1],
-		   [1, 0, 2, 2, 2, 2, 0, 0, 2, 0, 0, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
-entityList = [[0 for i in range(12)] for i in range(7)]
+mapList = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+		   [1, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 1],
+		   [1, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 1],
+		   [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1],
+		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+		   [2, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 2],
+		   [2, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 2],
+		   [2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
+		   [2, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 2],
+		   [2, 2, 2, 0, 2, 2, 2, 2, 2, 0, 2, 2, 2],
+		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+mapSize = [len(mapList), len(mapList[0])]
+spawns = {"gladiator": [3, 2], "snake": [[3, 5], [3, 7]]}
+entityList = [[0 for i in range(mapSize[1])] for i in range(mapSize[0])]
 
 class Gladiator:
 	def __init__(self, pos):
 		self.pos = pos
-		self.controls = {"q": [0, -1], "w": [-1, 0], "e": [0, 1], "a": [1, -1], "s": [1, 0], "d": [1, 1]}
+		self.controls = {"q": [0, -1], "w": [-1, 0], "e": [0, 1], "a": [1, -1], "s": [1, 0], "d": [1, 1], "1": [0, 0]}
 		entityList[self.pos[0]][self.pos[1]] = "gladiator"
 	def move(self, inp):
 		entityList[self.pos[0]][self.pos[1]] = 0
 		addend = 0
 		x = self.pos[1]
-		if inp != "w" and inp != "s":
+		if inp != "w" and inp != "s" and inp != "1":
 			if self.pos[1]%2 != 0:
 				addend = -1
 			x = self.pos[1] + self.controls[inp][1]
@@ -49,20 +59,29 @@ class Gladiator:
 				y = player.pos[0]
 				x = player.pos[1]
 				break
-		if mapList[y][x] == 0:
+		if mapList[y][x] in walkableTiles:
 			self.pos = [y, x]
 		entityList[self.pos[0]][self.pos[1]] = "gladiator"
 
-player = Gladiator([3, 6])
+player = Gladiator(spawns["gladiator"])
 
 class Snake:
-	def __init__(self, pos):
+	def __init__(self, pos, state):
 		self.pos = pos
-		entityList[self.pos[0]][self.pos[1]] = "snake"
+		self.state = state
+		self.speed = 2
+		entityList[self.pos[0]][self.pos[1]] = "snake"+str(self.state)
 
 	def move(self):
-		distance = [[m.inf for i in range(12)] for i in range(7)]
-		unvisited = [[1 for i in range(12)] for i in range(7)]
+		if self.state < self.speed:
+			self.state += 1
+			entityList[self.pos[0]][self.pos[1]] = "snake"+str(self.state)
+			return
+		self.state = 1
+		if player == 0:
+			return
+		distance = [[m.inf for i in range(mapSize[1])] for i in range(mapSize[0])]
+		unvisited = [[1 for i in range(mapSize[1])] for i in range(mapSize[0])]
 		distance[self.pos[0]][self.pos[1]] = 0
 		while True:
 			smallest = m.inf
@@ -76,7 +95,10 @@ class Snake:
 				break
 			neighbors = getNeighbors(current)
 			for neighbor in neighbors:
-				if mapList[neighbor[0]][neighbor[1]] == 0 and smallest+1 < distance[neighbor[0]][neighbor[1]]:
+				noEnts = False
+				if entityList[neighbor[0]][neighbor[1]] == 0 or entityList[neighbor[0]][neighbor[1]] == "gladiator":
+					noEnts = True
+				if mapList[neighbor[0]][neighbor[1]] in walkableTiles and noEnts and smallest+1 < distance[neighbor[0]][neighbor[1]]:
 					distance[neighbor[0]][neighbor[1]] = smallest+1
 			unvisited[current[0]][current[1]] = 0
 			if current == player.pos:
@@ -97,11 +119,8 @@ class Snake:
 				if path[-2] == player.pos:
 					killPlayer()
 					self.pos = path[-1]
-				entityList[self.pos[0]][self.pos[1]] = "snake"
+				entityList[self.pos[0]][self.pos[1]] = "snake"+str(self.state)
 				break
-
-snakes = [0 for i in range(10)]
-snakes[0] = Snake([1, 3])
 
 def drawHex(img, x, y, s=120):
 	screen.blit(imgs[img][0], (x*(2/3)*s, y*(2/3*s) + (x%2==0)*(2/6)*s - imgs[img][1]))
@@ -121,6 +140,45 @@ def killPlayer():
 	entityList[player.pos[0]][player.pos[1]] = 0
 	player = 0
 
+def spawnSnakes():
+	global snakesToSpawn
+	global roundNum
+	global snakeSpawns
+	snakesLeft = False
+	for snake in snakes:
+		if snake != 0:
+			snakesLeft = True
+			break
+	if not snakesLeft and snakesToSpawn == 0:
+		roundNum += 1
+		snakesToSpawn += roundNum
+	if snakesToSpawn:
+		availableSpawns = []
+		for spawn in snakeSpawns:
+			if entityList[spawn[0]][spawn[1]] == 0:
+				availableSpawns.append(spawn[:])
+		while snakesToSpawn > 0 and 0 in snakes and len(availableSpawns) > 0:
+			i = random.randint(0, len(availableSpawns)-1)
+			pos = availableSpawns[i]
+			state = random.randint(1, 2)
+			snakes[snakes.index(0)] = Snake(pos, state)
+			del availableSpawns[i]
+			snakesToSpawn -= 1
+			
+
+spawnNeighbors = []
+for spawn in spawns["snake"]:
+	spawnNeighbors.extend(getNeighbors(spawn))
+snakeSpawns = []
+for spawn in spawnNeighbors:
+	if mapList[spawn[0]][spawn[1]] in walkableTiles:
+		snakeSpawns.append(spawn)
+snakeSpawns.extend(spawns["snake"])
+print(snakeSpawns)
+snakes = [0 for i in range(100)]
+roundNum = 0
+snakesToSpawn = 0
+
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -133,6 +191,7 @@ while True:
 			for snake in snakes:
 				if snake != 0:
 					snake.move()
+			spawnSnakes()
 
 	screen.fill((22, 19, 16))
 
