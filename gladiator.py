@@ -15,7 +15,6 @@ framerate = 60
 tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate"}
 imgs = {"floor": [pygame.image.load("floor.png"), 8],
 		"wall": [pygame.image.load("wall.png"), 80],
-		"hole": [pygame.image.load("hole.png"), 0],
 		"grate": [pygame.image.load("grate.png"), 0],
 		"gladiator": [pygame.image.load("gladiator.png"), 80],
 		"gladiatorDying": [pygame.image.load("gladiatorDying.png"), 80],
@@ -24,20 +23,21 @@ imgs = {"floor": [pygame.image.load("floor.png"), 8],
 		"snakeDying": [pygame.image.load("snakeDying.png"), 80]}
 walkableTiles = [0, 3]
 
-mapList = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		   [1, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 1],
-		   [1, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 1],
-		   [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1],
-		   [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1],
-		   [2, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 2],
-		   [2, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 2],
-		   [2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2],
-		   [2, 0, 0, 2, 0, 0, 0, 0, 0, 2, 0, 0, 2],
-		   [2, 2, 2, 0, 2, 2, 2, 2, 2, 0, 2, 2, 2],
-		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+mapList = [[2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2],
+		   [2, 2, 2, 2, 2, 2, 1, 1, 0, 1, 1, 2, 2, 2, 2, 2, 2],
+		   [2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2],
+		   [2, 2, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 2, 2],
+		   [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+		   [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
+		   [1, 0, 0, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 0, 0, 1],
+		   [1, 0, 1, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 1, 0, 1],
+		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+		   [2, 2, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2],
+		   [2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2],
+		   [2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2],
+		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
 mapSize = [len(mapList), len(mapList[0])]
-spawns = {"gladiator": [3, 2], "snake": [[3, 5], [3, 7]]}
+spawns = {"gladiator": [6, 2], "snake": [[6, 7], [6, 9], [7, 7], [7, 9]]}
 entityList = [[0 for i in range(mapSize[1])] for i in range(mapSize[0])]
 animationList = []
 
@@ -178,16 +178,16 @@ spawnNeighbors = []
 for spawn in spawns["snake"]:
 	spawnNeighbors.extend(getNeighbors(spawn))
 snakeSpawns = []
-for spawn in spawnNeighbors:
-	if mapList[spawn[0]][spawn[1]] in walkableTiles:
-		snakeSpawns.append(spawn)
 snakeSpawns.extend(spawns["snake"])
+for spawn in spawnNeighbors:
+	if mapList[spawn[0]][spawn[1]] in walkableTiles and spawn not in snakeSpawns:
+		snakeSpawns.append(spawn)
 snakes = [0 for i in range(100)]
 roundNum = 0
 snakesToSpawn = 0
 
 def drawImg(img, pos, height = 0):
-	screen.blit(imgs[img][0], (pos[1], pos[0] - imgs[img][1] - height))
+	screen.blit(imgs[img][0], (pos[1] - offset[0], pos[0] - imgs[img][1] - height - offset[1]))
 
 def convertHex(pos, s=120):
 	return [pos[0]*(2*s/3) + (pos[1]%2==0)*(1*s/3), pos[1]*(2*s/3)]
@@ -215,17 +215,22 @@ def playAnim(actor):
 
 entityImgs = []
 def checkImgPos(tilePos):
-	for img in entityImgs:
+	imgsToRemove = []
+	for i, img in enumerate(entityImgs):
 		if img["pos"][0]/80 - 1/2 <= tilePos[0]/80:
 			if round(img["pos"][1]/80) == round(tilePos[1]/80):
 				drawImg(img["img"], img["pos"], height=img["height"])
-				entityImgs.remove(img)
+				imgsToRemove.append(i)
+	imgsToRemove.sort()
+	for i, img in enumerate(imgsToRemove):
+		del entityImgs[img-i]
 
 dying = []
 particles = []
 
 playerMoved = False
 moveTime = 0
+camera = convertHex(player.pos)
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -243,6 +248,22 @@ while True:
 					snake.move()
 			spawnSnakes()
 			playerMoved = False
+
+	if player != 0:
+		playerPos = convertHex(player.pos)
+		posDiff = [camera[1]-playerPos[1], camera[0]-playerPos[0]]
+		cameraDist = m.sqrt((posDiff[0])**2+(posDiff[1])**2)
+		angle = m.atan2(posDiff[1], posDiff[0])
+		camera = [camera[0]-m.sin(angle)*(1*cameraDist/2), camera[1]-m.cos(angle)*(1*cameraDist/2)]
+		offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
+		if offset[0] < 0:
+			offset[0] = 0
+		if offset[0] > (len(mapList[0])*80)-screenSize[0]+40:
+			offset[0] = (len(mapList[0])*80)-screenSize[0]+40
+		if offset[1] < 0:
+			offset[1] = 0
+		if offset[1] > (len(mapList)*80)-screenSize[1]+40:
+			offset[1] = (len(mapList)*80)-screenSize[1]+40
 
 	for death in dying:
 		if death["percent"] < 1:
@@ -275,21 +296,23 @@ while True:
 	for y in range(len(mapList)):
 		for x in range(len(mapList[y])):
 			if x%2 != 0:
-				hexPos = convertHex([y, x])
-				drawImg(tileCodes[mapList[y][x]], hexPos)
-				checkImgPos(hexPos)
+				if mapList[y][x] != 2:
+					hexPos = convertHex([y, x])
+					drawImg(tileCodes[mapList[y][x]], hexPos)
+					checkImgPos(hexPos)
 		for x in range(len(mapList[y])):
 			if x%2 == 0:
-				hexPos = convertHex([y, x])
-				drawImg(tileCodes[mapList[y][x]], hexPos)
-				checkImgPos(hexPos)
+				if mapList[y][x] != 2:
+					hexPos = convertHex([y, x])
+					drawImg(tileCodes[mapList[y][x]], hexPos)
+					checkImgPos(hexPos)
 
 	for particle in particles:
 		distance = particle["percent"]*particle["distance"]
 		height = -4*particle["height"]*(1/particle["distance"]*distance - 1/2)**2 + particle["height"]
 		x = particle["start"][1]+distance+60
 		y = particle["start"][0]-height+40
-		pygame.draw.circle(screen, particle["color"], (x, y), particle["size"])
+		pygame.draw.circle(screen, particle["color"], (x-offset[0], y-offset[1]), particle["size"])
 		particle["percent"] += 0.05
 		if y > screenSize[1]:
 			particles.remove(particle)
