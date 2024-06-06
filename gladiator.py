@@ -12,9 +12,10 @@ pygame.display.set_caption("snake", "snake")
 clock = pygame.time.Clock()
 framerate = 60
 
-tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate"}
+tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate", 4: "pillar"}
 imgs = {"floor": [pygame.image.load("floor.png"), 8],
-		"wall": [pygame.image.load("wall.png"), 80],
+		"wall": [pygame.image.load("wall.png"), 160],
+		"pillar": [pygame.image.load("pillar.png"), 88],
 		"grate": [pygame.image.load("grate.png"), 0],
 		"gladiator": [pygame.image.load("gladiator.png"), 80],
 		"gladiatorDying": [pygame.image.load("gladiatorDying.png"), 80],
@@ -26,13 +27,13 @@ walkableTiles = [0, 3]
 mapList = [[2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2],
 		   [2, 2, 2, 2, 2, 2, 1, 1, 0, 1, 1, 2, 2, 2, 2, 2, 2],
 		   [2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2],
-		   [2, 2, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 2, 2],
+		   [2, 2, 1, 1, 0, 0, 4, 0, 0, 0, 4, 0, 0, 1, 1, 2, 2],
 		   [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-		   [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 0, 0, 1],
-		   [1, 0, 1, 0, 0, 0, 0, 3, 1, 3, 0, 0, 0, 0, 1, 0, 1],
+		   [1, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4, 0, 1],
+		   [1, 0, 0, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 0, 0, 1],
+		   [1, 0, 4, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 4, 0, 1],
 		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		   [2, 2, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 2, 2, 2],
+		   [2, 2, 2, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 2, 2, 2],
 		   [2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2],
 		   [2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2],
 		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
@@ -254,7 +255,7 @@ while True:
 		posDiff = [camera[1]-playerPos[1], camera[0]-playerPos[0]]
 		cameraDist = m.sqrt((posDiff[0])**2+(posDiff[1])**2)
 		angle = m.atan2(posDiff[1], posDiff[0])
-		camera = [camera[0]-m.sin(angle)*(1*cameraDist/2), camera[1]-m.cos(angle)*(1*cameraDist/2)]
+		camera = [camera[0]-m.sin(angle)*(cameraDist/3), camera[1]-m.cos(angle)*(cameraDist/3)]
 		offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
 		if offset[0] < 0:
 			offset[0] = 0
