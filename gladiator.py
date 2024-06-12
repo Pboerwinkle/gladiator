@@ -166,7 +166,6 @@ def spawnSnakes():
 		timeLimit -= 300
 		if timeLimit < 2000:
 			timeLimit = 2000
-		print(timeLimit)
 	if snakesToSpawn:
 		availableSpawns = []
 		for spawn in snakeSpawns:
