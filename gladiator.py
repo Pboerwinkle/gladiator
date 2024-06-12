@@ -4,7 +4,7 @@ import math as m
 import pygame
 import pygame.draw
 pygame.init()
-screenSize = (1200, 900)
+screenSize = (1400, 900)
 screen = pygame.display.set_mode(screenSize)
 while not pygame.display.get_active():
 	time.sleep(0.1)
@@ -21,7 +21,8 @@ imgs = {"floor": [pygame.image.load("floor.png"), 8],
 		"gladiatorDying": [pygame.image.load("gladiatorDying.png"), 80],
 		"snake1": [pygame.image.load("snake1.png"), 80],
 		"snake2": [pygame.image.load("snake2.png"), 80],
-		"snakeDying": [pygame.image.load("snakeDying.png"), 80]}
+		"snakeDying": [pygame.image.load("snakeDying.png"), 80],
+		"timer": pygame.image.load("timer.png")}
 walkableTiles = [0, 3]
 
 mapList = [[2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2],
@@ -153,6 +154,7 @@ def spawnSnakes():
 	global snakesToSpawn
 	global roundNum
 	global snakeSpawns
+	global timeLimit
 	snakesLeft = False
 	for snake in snakes:
 		if snake != 0:
@@ -161,6 +163,10 @@ def spawnSnakes():
 	if not snakesLeft and snakesToSpawn == 0:
 		roundNum += 1
 		snakesToSpawn += roundNum
+		timeLimit -= 300
+		if timeLimit < 2000:
+			timeLimit = 2000
+		print(timeLimit)
 	if snakesToSpawn:
 		availableSpawns = []
 		for spawn in snakeSpawns:
@@ -232,6 +238,10 @@ particles = []
 playerMoved = False
 moveTime = 0
 camera = convertHex(player.pos)
+
+timerStart = pygame.time.get_ticks()
+timerRect = (screenSize[0]/2-48, screenSize[1]-96-40, 96, 96)
+timeLimit = 5300
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -243,12 +253,15 @@ while True:
 			player.move(event.unicode)
 			playerMoved = True
 			moveTime = pygame.time.get_ticks()
-	if playerMoved and pygame.time.get_ticks() - moveTime >= 500:
+			timerStart = pygame.time.get_ticks()
+	if (playerMoved and pygame.time.get_ticks() - moveTime >= 500) or pygame.time.get_ticks() - timerStart >= timeLimit:
 			for snake in snakes:
 				if snake != 0:
 					snake.move()
 			spawnSnakes()
 			playerMoved = False
+	if pygame.time.get_ticks() - timerStart >= timeLimit:
+			timerStart = pygame.time.get_ticks()
 
 	if player != 0:
 		playerPos = convertHex(player.pos)
@@ -257,12 +270,12 @@ while True:
 		angle = m.atan2(posDiff[1], posDiff[0])
 		camera = [camera[0]-m.sin(angle)*(cameraDist/3), camera[1]-m.cos(angle)*(cameraDist/3)]
 		offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
-		if offset[0] < 0:
-			offset[0] = 0
-		if offset[0] > (len(mapList[0])*80)-screenSize[0]+40:
-			offset[0] = (len(mapList[0])*80)-screenSize[0]+40
-		if offset[1] < 0:
-			offset[1] = 0
+		if offset[0] < -200:
+			offset[0] = -200
+		if offset[0] > (len(mapList[0])*80)-screenSize[0]+200+40:
+			offset[0] = (len(mapList[0])*80)-screenSize[0]+200+40
+		if offset[1] < 0-240:
+			offset[1] = 0-240
 		if offset[1] > (len(mapList)*80)-screenSize[1]+40:
 			offset[1] = (len(mapList)*80)-screenSize[1]+40
 
@@ -315,6 +328,11 @@ while True:
 		y = particle["start"][0]-height+40
 		pygame.draw.circle(screen, particle["color"], (x-offset[0], y-offset[1]), particle["size"])
 		particle["percent"] += 0.05
-		if y > screenSize[1]:
+		if y > screenSize[1] + offset[1]:
 			particles.remove(particle)
+
+	pygame.draw.ellipse(screen, (0, 0, 0), timerRect, width=48)
+	currentTimeProp = (pygame.time.get_ticks() - timerStart)/timeLimit
+	pygame.draw.arc(screen, (150, 0, 0), timerRect, m.pi/2, -currentTimeProp*2*m.pi + m.pi/2, width=48)
+	screen.blit(imgs["timer"], (timerRect[0]-2, timerRect[1]-2))
 	pygame.display.flip()
