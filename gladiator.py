@@ -239,7 +239,7 @@ moveTime = 0
 camera = convertHex(player.pos)
 
 timerStart = pygame.time.get_ticks()
-timerRect = (screenSize[0]/2-48, screenSize[1]-96-40, 96, 96)
+timerRect = (screenSize[0]/2-70, screenSize[1]-140-40, 140, 140)
 timeLimit = 5300
 while True:
 	clock.tick(framerate)
@@ -333,5 +333,5 @@ while True:
 	pygame.draw.ellipse(screen, (0, 0, 0), timerRect, width=48)
 	currentTimeProp = (pygame.time.get_ticks() - timerStart)/timeLimit
 	pygame.draw.arc(screen, (150, 0, 0), timerRect, m.pi/2, -currentTimeProp*2*m.pi + m.pi/2, width=48)
-	screen.blit(imgs["timer"], (timerRect[0]-2, timerRect[1]-2))
+	screen.blit(imgs["timer"], (timerRect[0]-5, timerRect[1]-5))
 	pygame.display.flip()
