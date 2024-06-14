@@ -13,26 +13,6 @@ pygame.display.set_caption("snake", "snake")
 clock = pygame.time.Clock()
 framerate = 60
 
-assets = "assets"+config.CHANGE_FOLDER
-tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate", 4: "pillar"}
-imgs = {"floor": [pygame.image.load(assets+"floor.png"), 8],
-		"wall": [pygame.image.load(assets+"wall.png"), 160],
-		"pillar": [pygame.image.load(assets+"pillar.png"), 88],
-		"grate": [pygame.image.load(assets+"grate.png"), 0],
-		"gladiator": [pygame.image.load(assets+"gladiator.png"), 80],
-		"gladiatorDying": [pygame.image.load(assets+"gladiatorDying.png"), 80],
-		"snake1": [pygame.image.load(assets+"snake1.png"), 80],
-		"snake2": [pygame.image.load(assets+"snake2.png"), 80],
-		"snakeDying": [pygame.image.load(assets+"snakeDying.png"), 80],
-		"timer": pygame.image.load(assets+"timer.png")}
-walkableTiles = [0, 3]
-
-mapList = config.MAP_LIST
-mapSize = [len(mapList), len(mapList[0])]
-spawns = {"gladiator": [6, 2], "snake": [[6, 7], [6, 9], [7, 7], [7, 9]]}
-entityList = [[0 for i in range(mapSize[1])] for i in range(mapSize[0])]
-animationList = []
-
 class Gladiator:
 	def __init__(self, pos):
 		self.pos = pos
@@ -63,8 +43,6 @@ class Gladiator:
 		self.animation = {"img": "gladiator", "type": "move", "pos": [self.pos[:], [y, x]], "percent": 0}
 		player.pos = [y, x]
 		entityList[self.pos[0]][self.pos[1]] = "gladiator"
-
-player = Gladiator(spawns["gladiator"])
 
 class Snake:
 	def __init__(self, pos, state):
@@ -172,19 +150,6 @@ def spawnSnakes():
 			snakes[snakes.index(0)] = Snake(pos, state)
 			del availableSpawns[i]
 			snakesToSpawn -= 1
-			
-
-spawnNeighbors = []
-for spawn in spawns["snake"]:
-	spawnNeighbors.extend(getNeighbors(spawn))
-snakeSpawns = []
-snakeSpawns.extend(spawns["snake"])
-for spawn in spawnNeighbors:
-	if mapList[spawn[0]][spawn[1]] in walkableTiles and spawn not in snakeSpawns:
-		snakeSpawns.append(spawn)
-snakes = [0 for i in range(100)]
-roundNum = 0
-snakesToSpawn = 0
 
 def drawImg(img, pos, height = 0):
 	screen.blit(imgs[img][0], (pos[1] - offset[0], pos[0] - imgs[img][1] - height - offset[1]))
@@ -213,7 +178,6 @@ def playAnim(actor):
 		height = 20*m.sin(6*m.pi*actor.animation["percent"])
 		entityImgs.append({"img": actor.animation["img"], "pos": pos[0], "height": height})
 
-entityImgs = []
 def checkImgPos(tilePos):
 	imgsToRemove = []
 	for i, img in enumerate(entityImgs):
@@ -225,110 +189,172 @@ def checkImgPos(tilePos):
 	for i, img in enumerate(imgsToRemove):
 		del entityImgs[img-i]
 
-dying = []
-particles = []
 
-playerMoved = False
-moveTime = 0
-camera = convertHex(player.pos)
+assets = "assets"+config.CHANGE_FOLDER
+tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate", 4: "pillar"}
+imgs = {"floor": [pygame.image.load(assets+"floor.png"), 8],
+		"wall": [pygame.image.load(assets+"wall.png"), 160],
+		"pillar": [pygame.image.load(assets+"pillar.png"), 88],
+		"grate": [pygame.image.load(assets+"grate.png"), 0],
+		"gladiator": [pygame.image.load(assets+"gladiator.png"), 80],
+		"gladiatorDying": [pygame.image.load(assets+"gladiatorDying.png"), 80],
+		"snake1": [pygame.image.load(assets+"snake1.png"), 80],
+		"snake2": [pygame.image.load(assets+"snake2.png"), 80],
+		"snakeDying": [pygame.image.load(assets+"snakeDying.png"), 80],
+		"timer": pygame.image.load(assets+"timer.png")}
+walkableTiles = [0, 3]
 
-playerStats = {"killed": 0, "moves": 1, "totalTime": pygame.time.get_ticks()}
+mapList = config.MAP_LIST
+mapSize = [len(mapList), len(mapList[0])]
 
-timerStart = pygame.time.get_ticks()
+spawns = {"gladiator": [6, 2], "snake": [[6, 7], [6, 9], [7, 7], [7, 9]]}
+spawnNeighbors = []
+for spawn in spawns["snake"]:
+	spawnNeighbors.extend(getNeighbors(spawn))
+snakeSpawns = []
+snakeSpawns.extend(spawns["snake"])
+for spawn in spawnNeighbors:
+	if mapList[spawn[0]][spawn[1]] in walkableTiles and spawn not in snakeSpawns:
+		snakeSpawns.append(spawn)
+
 timerRect = (screenSize[0]/2-70, screenSize[1]-140-40, 140, 140)
-timeLimit = 10467
-while True:
-	clock.tick(framerate)
-	events = pygame.event.get()
-	for event in events:
-		if event.type == pygame.QUIT:
-			pygame.quit()
-			quit()
-		if event.type == pygame.KEYDOWN and player != 0 and event.unicode in player.controls.keys() and not playerMoved:
-			player.move(event.unicode)
-			playerMoved = True
-			moveTime = pygame.time.get_ticks()
-			timerStart = pygame.time.get_ticks()
-	if (playerMoved and pygame.time.get_ticks() - moveTime >= 500) or pygame.time.get_ticks() - timerStart >= timeLimit:
-			for snake in snakes:
-				if snake != 0:
-					snake.move()
-			spawnSnakes()
-			playerMoved = False
-			playerStats["moves"] += 1
-	if pygame.time.get_ticks() - timerStart >= timeLimit:
-			timerStart = pygame.time.get_ticks()
 
-	if player != 0:
-		playerPos = convertHex(player.pos)
-		posDiff = [camera[1]-playerPos[1], camera[0]-playerPos[0]]
-		cameraDist = m.sqrt((posDiff[0])**2+(posDiff[1])**2)
-		angle = m.atan2(posDiff[1], posDiff[0])
-		camera = [camera[0]-m.sin(angle)*(cameraDist/3), camera[1]-m.cos(angle)*(cameraDist/3)]
-		offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
-		if offset[0] < -200:
-			offset[0] = -200
-		if offset[0] > (len(mapList[0])*80)-screenSize[0]+200+40:
-			offset[0] = (len(mapList[0])*80)-screenSize[0]+200+40
-		if offset[1] < 0-240:
-			offset[1] = 0-240
-		if offset[1] > (len(mapList)*80)-screenSize[1]+40:
-			offset[1] = (len(mapList)*80)-screenSize[1]+40
+####
+def runGame():
+	global entityList
+	global player
+	global snakes
+	global roundNum
+	global snakesToSpawn
+	global entityImgs
+	global dying
+	global playerStats
+	global offset
+	global timeLimit
+	entityList = [[0 for i in range(mapSize[1])] for i in range(mapSize[0])]
 
-	for death in dying:
-		if death["percent"] < 1:
-			death["percent"] += .05
-			entityImgs.append({"img": death["img"], "pos": convertHex(death["pos"]), "height": 0})
-		else:
-			if death["img"] == "snakeDying":
-				color = (81, 57, 49)
+	player = Gladiator(spawns["gladiator"])
+
+	snakes = [0 for i in range(100)]
+	roundNum = 0
+	snakesToSpawn = 0
+
+	entityImgs = []
+
+	dying = []
+	particles = []
+
+	playerMoved = False
+	moveTime = 0
+	camera = convertHex(player.pos)
+	playerDead = False
+	endGame = False
+
+	playerStats = {"killed": 0, "moves": 1, "totalTime": pygame.time.get_ticks()}
+
+	timerStart = pygame.time.get_ticks()
+	timeLimit = 10467
+	while True:
+		clock.tick(framerate)
+		events = pygame.event.get()
+		for event in events:
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				quit()
+			if event.type == pygame.KEYDOWN and player != 0 and event.unicode in player.controls.keys() and not playerMoved:
+				player.move(event.unicode)
+				playerMoved = True
+				moveTime = pygame.time.get_ticks()
+				timerStart = pygame.time.get_ticks()
+		if (playerMoved and pygame.time.get_ticks() - moveTime >= 500) or pygame.time.get_ticks() - timerStart >= timeLimit and player!=0:
+				for snake in snakes:
+					if snake != 0:
+						snake.move()
+				spawnSnakes()
+				playerMoved = False
+				playerStats["moves"] += 1
+		if pygame.time.get_ticks() - timerStart >= timeLimit and player!=0:
+				timerStart = pygame.time.get_ticks()
+
+		if player != 0:
+			playerPos = convertHex(player.pos)
+			posDiff = [camera[1]-playerPos[1], camera[0]-playerPos[0]]
+			cameraDist = m.sqrt((posDiff[0])**2+(posDiff[1])**2)
+			angle = m.atan2(posDiff[1], posDiff[0])
+			camera = [camera[0]-m.sin(angle)*(cameraDist/3), camera[1]-m.cos(angle)*(cameraDist/3)]
+			offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
+			if offset[0] < -200:
+				offset[0] = -200
+			if offset[0] > (len(mapList[0])*80)-screenSize[0]+200+40:
+				offset[0] = (len(mapList[0])*80)-screenSize[0]+200+40
+			if offset[1] < 0-240:
+				offset[1] = 0-240
+			if offset[1] > (len(mapList)*80)-screenSize[1]+40:
+				offset[1] = (len(mapList)*80)-screenSize[1]+40
+
+		for death in dying:
+			if death["percent"] < 1:
+				death["percent"] += .05
+				entityImgs.append({"img": death["img"], "pos": convertHex(death["pos"]), "height": 0})
 			else:
-				color = (140, 133, 114)
-			start = convertHex(death["pos"])
-			dying.remove(death)
-			for i in range(15):
-				distance = random.randint(-200, 200)
-				if distance == 0:
-					distance = 1
-				height = random.randint(100, 200)
-				size = random.randint(5, 10)
-				darkness = random.randint(-40, 40)
-				thisColor = (color[0]+darkness, color[1]+darkness, color[2]+darkness)
-				particles.append({"start": start, "distance": distance, "height": height, "size": size, "color": thisColor, "percent": 0})
-	if player != 0:
-		playAnim(player)
-	for snake in snakes:
-		if snake != 0:
-			playAnim(snake)
+				if death["img"] == "snakeDying":
+					color = (81, 57, 49)
+				else:
+					color = (140, 133, 114)
+				start = convertHex(death["pos"])
+				if death["img"] == "gladiatorDying":
+					playerDead = True
+				dying.remove(death)
+				for i in range(15):
+					distance = random.randint(-200, 200)
+					if distance == 0:
+						distance = 1
+					height = random.randint(100, 200)
+					size = random.randint(5, 10)
+					darkness = random.randint(-40, 40)
+					thisColor = (color[0]+darkness, color[1]+darkness, color[2]+darkness)
+					particles.append({"start": start, "distance": distance, "height": height, "size": size, "color": thisColor, "percent": 0})
+		if player != 0:
+			playAnim(player)
+		for snake in snakes:
+			if snake != 0:
+				playAnim(snake)
 
-	screen.fill((22, 19, 16))
+		screen.fill((22, 19, 16))
 
-	for y in range(len(mapList)):
-		for x in range(len(mapList[y])):
-			if x%2 != 0:
-				if mapList[y][x] != 2:
-					hexPos = convertHex([y, x])
-					drawImg(tileCodes[mapList[y][x]], hexPos)
-					checkImgPos(hexPos)
-		for x in range(len(mapList[y])):
-			if x%2 == 0:
-				if mapList[y][x] != 2:
-					hexPos = convertHex([y, x])
-					drawImg(tileCodes[mapList[y][x]], hexPos)
-					checkImgPos(hexPos)
+		for y in range(len(mapList)):
+			for x in range(len(mapList[y])):
+				if x%2 != 0:
+					if mapList[y][x] != 2:
+						hexPos = convertHex([y, x])
+						drawImg(tileCodes[mapList[y][x]], hexPos)
+						checkImgPos(hexPos)
+			for x in range(len(mapList[y])):
+				if x%2 == 0:
+					if mapList[y][x] != 2:
+						hexPos = convertHex([y, x])
+						drawImg(tileCodes[mapList[y][x]], hexPos)
+						checkImgPos(hexPos)
 
-	for particle in particles:
-		distance = particle["percent"]*particle["distance"]
-		height = -4*particle["height"]*(1/particle["distance"]*distance - 1/2)**2 + particle["height"]
-		x = particle["start"][1]+distance+60
-		y = particle["start"][0]-height+40
-		pygame.draw.circle(screen, particle["color"], (x-offset[0], y-offset[1]), particle["size"])
-		particle["percent"] += 0.05
-		if y > screenSize[1] + offset[1]:
-			particles.remove(particle)
+		for particle in particles:
+			distance = particle["percent"]*particle["distance"]
+			height = -4*particle["height"]*(1/particle["distance"]*distance - 1/2)**2 + particle["height"]
+			x = particle["start"][1]+distance+60
+			y = particle["start"][0]-height+40
+			pygame.draw.circle(screen, particle["color"], (x-offset[0], y-offset[1]), particle["size"])
+			particle["percent"] += 0.05
+			if y > screenSize[1] + offset[1]:
+				particles.remove(particle)
+				if playerDead and particles == []:
+					endGame = True
+		if endGame:
+			break
 
-	pygame.draw.ellipse(screen, (0, 0, 0), timerRect, width=48)
-	currentTimeProp = (pygame.time.get_ticks() - timerStart)/timeLimit
-	pygame.draw.arc(screen, (150, 0, 0), timerRect, m.pi/2, -currentTimeProp*2*m.pi + m.pi/2, width=48)
-	screen.blit(imgs["timer"], (timerRect[0]-5, timerRect[1]-5))
-	pygame.display.flip()
+		pygame.draw.ellipse(screen, (0, 0, 0), timerRect, width=48)
+		currentTimeProp = (pygame.time.get_ticks() - timerStart)/timeLimit
+		pygame.draw.arc(screen, (150, 0, 0), timerRect, m.pi/2, -currentTimeProp*2*m.pi + m.pi/2, width=48)
+		screen.blit(imgs["timer"], (timerRect[0]-5, timerRect[1]-5))
+		pygame.display.flip()
+
+while True:
+	runGame()
