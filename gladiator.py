@@ -1,10 +1,11 @@
+import config
 import numpy
 import random
 import math as m
 import pygame
 import pygame.draw
 pygame.init()
-screenSize = (1400, 900)
+screenSize = config.SCREEN_SIZE
 screen = pygame.display.set_mode(screenSize)
 while not pygame.display.get_active():
 	time.sleep(0.1)
@@ -12,32 +13,21 @@ pygame.display.set_caption("snake", "snake")
 clock = pygame.time.Clock()
 framerate = 60
 
+assets = "assets"+config.CHANGE_FOLDER
 tileCodes = {0: "floor", 1: "wall", 2: "hole", 3: "grate", 4: "pillar"}
-imgs = {"floor": [pygame.image.load("floor.png"), 8],
-		"wall": [pygame.image.load("wall.png"), 160],
-		"pillar": [pygame.image.load("pillar.png"), 88],
-		"grate": [pygame.image.load("grate.png"), 0],
-		"gladiator": [pygame.image.load("gladiator.png"), 80],
-		"gladiatorDying": [pygame.image.load("gladiatorDying.png"), 80],
-		"snake1": [pygame.image.load("snake1.png"), 80],
-		"snake2": [pygame.image.load("snake2.png"), 80],
-		"snakeDying": [pygame.image.load("snakeDying.png"), 80],
-		"timer": pygame.image.load("timer.png")}
+imgs = {"floor": [pygame.image.load(assets+"floor.png"), 8],
+		"wall": [pygame.image.load(assets+"wall.png"), 160],
+		"pillar": [pygame.image.load(assets+"pillar.png"), 88],
+		"grate": [pygame.image.load(assets+"grate.png"), 0],
+		"gladiator": [pygame.image.load(assets+"gladiator.png"), 80],
+		"gladiatorDying": [pygame.image.load(assets+"gladiatorDying.png"), 80],
+		"snake1": [pygame.image.load(assets+"snake1.png"), 80],
+		"snake2": [pygame.image.load(assets+"snake2.png"), 80],
+		"snakeDying": [pygame.image.load(assets+"snakeDying.png"), 80],
+		"timer": pygame.image.load(assets+"timer.png")}
 walkableTiles = [0, 3]
 
-mapList = [[2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2],
-		   [2, 2, 2, 2, 2, 2, 1, 1, 0, 1, 1, 2, 2, 2, 2, 2, 2],
-		   [2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2],
-		   [2, 2, 1, 1, 0, 0, 4, 0, 0, 0, 4, 0, 0, 1, 1, 2, 2],
-		   [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
-		   [1, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4, 0, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 0, 0, 1],
-		   [1, 0, 4, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 4, 0, 1],
-		   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-		   [2, 2, 2, 0, 0, 0, 4, 0, 0, 0, 4, 0, 0, 0, 2, 2, 2],
-		   [2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2],
-		   [2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2],
-		   [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]]
+mapList = config.MAP_LIST
 mapSize = [len(mapList), len(mapList[0])]
 spawns = {"gladiator": [6, 2], "snake": [[6, 7], [6, 9], [7, 7], [7, 9]]}
 entityList = [[0 for i in range(mapSize[1])] for i in range(mapSize[0])]
@@ -46,7 +36,7 @@ animationList = []
 class Gladiator:
 	def __init__(self, pos):
 		self.pos = pos
-		self.controls = {"q": [0, -1], "w": [-1, 0], "e": [0, 1], "a": [1, -1], "s": [1, 0], "d": [1, 1], "1": [0, 0]}
+		self.controls = config.CONTROLS
 		entityList[self.pos[0]][self.pos[1]] = "gladiator"
 		self.animation = {"img": "gladiator", "type": "stand", "pos": [self.pos[:], self.pos[:]], "percent": None}
 
@@ -65,6 +55,7 @@ class Gladiator:
 				entityList[snake.pos[0]][snake.pos[1]] = 0
 				dying.append({"pos": snake.pos, "img": "snakeDying", "percent": 0})
 				snakes[i] = 0
+				playerStats["killed"] += 1
 				break
 		if mapList[y][x] not in walkableTiles:
 			y = self.pos[0]
@@ -146,9 +137,12 @@ def getNeighbors(pos):
 
 def killPlayer():
 	global player
+	global playerStats
 	entityList[player.pos[0]][player.pos[1]] = 0
 	dying.append({"pos": player.pos, "img": "gladiatorDying", "percent": 0})
 	player = 0
+	playerStats["totalTime"] = (pygame.time.get_ticks()-playerStats["totalTime"])/1000
+	print(playerStats)
 
 def spawnSnakes():
 	global snakesToSpawn
@@ -163,9 +157,9 @@ def spawnSnakes():
 	if not snakesLeft and snakesToSpawn == 0:
 		roundNum += 1
 		snakesToSpawn += roundNum
-		timeLimit -= 300
-		if timeLimit < 2000:
-			timeLimit = 2000
+		timeLimit -= 467
+		if timeLimit < 3000:
+			timeLimit = 3000
 	if snakesToSpawn:
 		availableSpawns = []
 		for spawn in snakeSpawns:
@@ -238,9 +232,11 @@ playerMoved = False
 moveTime = 0
 camera = convertHex(player.pos)
 
+playerStats = {"killed": 0, "moves": 1, "totalTime": pygame.time.get_ticks()}
+
 timerStart = pygame.time.get_ticks()
 timerRect = (screenSize[0]/2-70, screenSize[1]-140-40, 140, 140)
-timeLimit = 5300
+timeLimit = 10467
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -259,6 +255,7 @@ while True:
 					snake.move()
 			spawnSnakes()
 			playerMoved = False
+			playerStats["moves"] += 1
 	if pygame.time.get_ticks() - timerStart >= timeLimit:
 			timerStart = pygame.time.get_ticks()
 
