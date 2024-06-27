@@ -392,16 +392,17 @@ def blitStats(stats, offset):
 	drawBanner(imgs["killedScore"], playerStats["killed"], (screenSize[0]/2, 60-offset))
 	drawBanner(imgs["movedScore"], playerStats["moves"], (screenSize[0]/2, 140-offset))
 	drawBanner(imgs["timeScore"], playerStats["totalTime"], (screenSize[0]/2, 220-offset))
-	screen.blit(imgs["restart"], (screenSize[0]/2-79, screenSize[1]/2-27))
-	screen.blit(charImgs[list(config.CONTROLS.keys())[3]], (screenSize[0]/2-79-32, screenSize[1]/2-27+5))
-	screen.blit(imgs["close"], (screenSize[0]/2+25, screenSize[1]/2-27))
-	screen.blit(charImgs[list(config.CONTROLS.keys())[5]], (screenSize[0]/2+25+52, screenSize[1]/2-27+5))
+	screen.blit(imgs["restart"], (screenSize[0]/2-79, screenSize[1]/2-27-offset))
+	screen.blit(charImgs[list(config.CONTROLS.keys())[3]], (screenSize[0]/2-79-32, screenSize[1]/2-27+5-offset))
+	screen.blit(imgs["close"], (screenSize[0]/2+25, screenSize[1]/2-27-offset))
+	screen.blit(charImgs[list(config.CONTROLS.keys())[5]], (screenSize[0]/2+25+52, screenSize[1]/2-27+5-offset))
 
+playerStats, endScreen = runGame()
 shade = pygame.surface.Surface(screenSize)
 alpha = 0
 shade.set_alpha(alpha)
 shade.fill((0, 0, 0))
-playerStats, endScreen = runGame()
+offset = screenSize[1]
 while True:
 	clock.tick(framerate)
 	events = pygame.event.get()
@@ -412,6 +413,8 @@ while True:
 		if event.type == pygame.KEYDOWN:
 			if event.unicode == list(config.CONTROLS.keys())[3]:
 				playerStats, endScreen = runGame()
+				alpha = 0
+				offset = screenSize[1]
 			if event.unicode == list(config.CONTROLS.keys())[5]:
 				pygame.quit()
 				quit()
@@ -419,9 +422,11 @@ while True:
 	if alpha < 150:
 		alpha += 1
 		shade.set_alpha(alpha)
+	if offset > 0:
+		offset -= 8
 
 	screen.fill((0, 0, 0))
 	screen.blit(endScreen, (0, 0))
 	screen.blit(shade, (0, 0))
-	blitStats(playerStats, 0)
+	blitStats(playerStats, offset)
 	pygame.display.flip()
