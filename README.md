@@ -1,7 +1,12 @@
-up: W
-up-right: E
-down-right: D
-down: S
-down-left: A
-up-left: Q
-wait: 1
+ - software:
+   - python3
+   - pygame (2.5.2? (IDK, it is what I have))
+ - run with `python3 gladiator.py`
+ - controls:
+   - up: W
+   - up-right: E
+   - down-right: D
+   - down: S
+   - down-left: A
+   - up-left: Q
+   - wait: 1
