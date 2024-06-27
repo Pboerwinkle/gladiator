@@ -119,8 +119,7 @@ def killPlayer():
 	entityList[player.pos[0]][player.pos[1]] = 0
 	dying.append({"pos": player.pos, "img": "gladiatorDying", "percent": 0})
 	player = 0
-	playerStats["totalTime"] = (pygame.time.get_ticks()-playerStats["totalTime"])/1000
-	print(playerStats)
+	playerStats["totalTime"] = round((pygame.time.get_ticks()-playerStats["totalTime"])/1000, 1)
 
 def spawnSnakes():
 	global snakesToSpawn
@@ -201,8 +200,23 @@ imgs = {"floor": [pygame.image.load(assets+"floor.png"), 8],
 		"snake1": [pygame.image.load(assets+"snake1.png"), 80],
 		"snake2": [pygame.image.load(assets+"snake2.png"), 80],
 		"snakeDying": [pygame.image.load(assets+"snakeDying.png"), 80],
-		"timer": pygame.image.load(assets+"timer.png")}
+		"timer": pygame.image.load(assets+"timer.png"),
+		"killedScore": pygame.image.load(assets+"killedScore.png"),
+		"movedScore": pygame.image.load(assets+"movedScore.png"),
+		"timeScore": pygame.image.load(assets+"timeScore.png"),
+		"restart": pygame.image.load(assets+"restart.png"),
+		"close": pygame.image.load(assets+"close.png"),
+		"scoreEnd": pygame.image.load(assets+"scoreEnd.png"),
+		"scoreMiddle": pygame.image.load(assets+"scoreMiddle.png")}
 walkableTiles = [0, 3]
+
+font = pygame.image.load(assets+"font.png")
+charImgs = {}
+chars = list("0123456789abcdefghijklmnopqrstuvwxyz.")
+for i in range(len(chars)):
+	char = pygame.surface.Surface((30, 40), pygame.SRCALPHA)
+	char.blit(font, (0, 0), (i*30, 0, 30, 40))
+	charImgs[chars[i]] = char
 
 mapList = config.MAP_LIST
 mapSize = [len(mapList), len(mapList[0])]
@@ -248,20 +262,30 @@ def runGame():
 	moveTime = 0
 	camera = convertHex(player.pos)
 	playerDead = False
-	endGame = False
+	queuedKey = None
 
-	playerStats = {"killed": 0, "moves": 1, "totalTime": pygame.time.get_ticks()}
+	playerStats = {"killed": 0, "moves": 0, "totalTime": pygame.time.get_ticks()}
 
 	timerStart = pygame.time.get_ticks()
 	timeLimit = 10467
 	while True:
 		clock.tick(framerate)
 		events = pygame.event.get()
+		if player != 0 and queuedKey in player.controls.keys() and not playerMoved:
+			player.move(queuedKey)
+			queuedKey = None
+			playerMoved = True
+			moveTime = pygame.time.get_ticks()
+			timerStart = pygame.time.get_ticks()
 		for event in events:
 			if event.type == pygame.QUIT:
 				pygame.quit()
 				quit()
-			if event.type == pygame.KEYDOWN and player != 0 and event.unicode in player.controls.keys() and not playerMoved:
+			if event.type == pygame.KEYDOWN and player != 0 and event.unicode in player.controls.keys():
+				if playerMoved:
+					if pygame.time.get_ticks() - moveTime >= 250:
+						queuedKey = event.unicode
+					continue
 				player.move(event.unicode)
 				playerMoved = True
 				moveTime = pygame.time.get_ticks()
@@ -281,7 +305,7 @@ def runGame():
 			posDiff = [camera[1]-playerPos[1], camera[0]-playerPos[0]]
 			cameraDist = m.sqrt((posDiff[0])**2+(posDiff[1])**2)
 			angle = m.atan2(posDiff[1], posDiff[0])
-			camera = [camera[0]-m.sin(angle)*(cameraDist/3), camera[1]-m.cos(angle)*(cameraDist/3)]
+			camera = [camera[0]-posDiff[1]/3, camera[1]-posDiff[0]/3]
 			offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
 			if offset[0] < -200:
 				offset[0] = -200
@@ -346,9 +370,7 @@ def runGame():
 			if y > screenSize[1] + offset[1]:
 				particles.remove(particle)
 				if playerDead and particles == []:
-					endGame = True
-		if endGame:
-			break
+					return playerStats, screen.copy()
 
 		pygame.draw.ellipse(screen, (0, 0, 0), timerRect, width=48)
 		currentTimeProp = (pygame.time.get_ticks() - timerStart)/timeLimit
@@ -356,5 +378,50 @@ def runGame():
 		screen.blit(imgs["timer"], (timerRect[0]-5, timerRect[1]-5))
 		pygame.display.flip()
 
+def drawBanner(symbol, num, pos):
+	bannerWidth = 20*2+30*2+30*len(str(num))
+	screen.blit(imgs["scoreEnd"], (pos[0]-bannerWidth/2, pos[1]))
+	screen.blit(pygame.transform.flip(imgs["scoreEnd"], True, False), (bannerWidth-20+pos[0]-bannerWidth/2, pos[1]))
+	for i in range(len(str(num))+2):
+		screen.blit(imgs["scoreMiddle"], (i*30+20+pos[0]-bannerWidth/2, pos[1]))
+	screen.blit(symbol, (20+pos[0]-bannerWidth/2, 5+pos[1]))
+	for i, char in enumerate(list(str(num))):
+		screen.blit(charImgs[char], (20+2*30+i*30+pos[0]-bannerWidth/2, 10+pos[1]))
+
+def blitStats(stats, offset):
+	drawBanner(imgs["killedScore"], playerStats["killed"], (screenSize[0]/2, 60-offset))
+	drawBanner(imgs["movedScore"], playerStats["moves"], (screenSize[0]/2, 140-offset))
+	drawBanner(imgs["timeScore"], playerStats["totalTime"], (screenSize[0]/2, 220-offset))
+	screen.blit(imgs["restart"], (screenSize[0]/2-79, screenSize[1]/2-27))
+	screen.blit(charImgs[list(config.CONTROLS.keys())[3]], (screenSize[0]/2-79-32, screenSize[1]/2-27+5))
+	screen.blit(imgs["close"], (screenSize[0]/2+25, screenSize[1]/2-27))
+	screen.blit(charImgs[list(config.CONTROLS.keys())[5]], (screenSize[0]/2+25+52, screenSize[1]/2-27+5))
+
+shade = pygame.surface.Surface(screenSize)
+alpha = 0
+shade.set_alpha(alpha)
+shade.fill((0, 0, 0))
+playerStats, endScreen = runGame()
 while True:
-	runGame()
+	clock.tick(framerate)
+	events = pygame.event.get()
+	for event in events:
+		if event.type == pygame.QUIT:
+			pygame.quit()
+			quit()
+		if event.type == pygame.KEYDOWN:
+			if event.unicode == list(config.CONTROLS.keys())[3]:
+				playerStats, endScreen = runGame()
+			if event.unicode == list(config.CONTROLS.keys())[5]:
+				pygame.quit()
+				quit()
+
+	if alpha < 150:
+		alpha += 1
+		shade.set_alpha(alpha)
+
+	screen.fill((0, 0, 0))
+	screen.blit(endScreen, (0, 0))
+	screen.blit(shade, (0, 0))
+	blitStats(playerStats, 0)
+	pygame.display.flip()
