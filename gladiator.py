@@ -307,14 +307,14 @@ def runGame():
 			angle = m.atan2(posDiff[1], posDiff[0])
 			camera = [camera[0]-posDiff[1]/3, camera[1]-posDiff[0]/3]
 			offset = [camera[1]-screenSize[0]/2+60, camera[0]-screenSize[1]/2+40]
-			if offset[0] < -200:
-				offset[0] = -200
-			if offset[0] > (len(mapList[0])*80)-screenSize[0]+200+40:
-				offset[0] = (len(mapList[0])*80)-screenSize[0]+200+40
-			if offset[1] < 0-240:
-				offset[1] = 0-240
-			if offset[1] > (len(mapList)*80)-screenSize[1]+40:
-				offset[1] = (len(mapList)*80)-screenSize[1]+40
+			if offset[0] < 0:
+				offset[0] = 0
+			if offset[0] > (len(mapList[0])*80)-screenSize[0]+40:
+				offset[0] = (len(mapList[0])*80)-screenSize[0]+40
+			if offset[1] < 0-120:
+				offset[1] = 0-120
+			if offset[1] > (len(mapList)*80)-screenSize[1]+40+100:
+				offset[1] = (len(mapList)*80)-screenSize[1]+40+100
 
 		for death in dying:
 			if death["percent"] < 1:
